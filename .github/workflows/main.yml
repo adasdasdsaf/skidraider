@@ -1,0 +1,50 @@
+name: Build and Release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Clone skidraider repository
+        run: git clone https://github.com/bytevn/skidraider.git
+
+      - name: Run install.bat
+        run: .\install.bat
+
+      - name: Run build.bat
+        run: .\build.bat
+
+      - name: Delete previous tag and release
+        uses: dev-drprasad/delete-tag-and-release@v1.1
+        with:
+          tag_name: AutoBuildExe
+          delete_release: true
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: AutoBuildExe
+          release_name: AutoBuildExe
+          body: Obfuscated run.cmd file
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        id: upload-release-asset 
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: skidraider\skid.exe
+          asset_name: skid.exe
+          asset_content_type: application/octet-stream
